@@ -3,6 +3,14 @@ x-common-env: &common-env
   PGID: ${PGID}
   TZ: ${TZ}
 
+volumes:
+  arr-data:
+    driver: local
+    driver_opts:
+      type: cifs
+      device: "//${NAS_HOST}/${NAS_PATH}"
+      o: "username=${NAS_USER},password=${NAS_PASS},uid=${PUID},gid=${PGID},file_mode=0664,dir_mode=0775,vers=3.0,iocharset=utf8"
+
 services:
   sabnzbd:
     image: lscr.io/linuxserver/sabnzbd:latest
@@ -13,7 +21,7 @@ services:
       - "8080:8080"
     volumes:
       - ${CONFIG_DIR}/sabnzbd:/config
-      - ${DOWNLOADS_DIR}:/downloads
+      - arr-data:/data
 
   prowlarr:
     image: lscr.io/linuxserver/prowlarr:latest
@@ -34,8 +42,7 @@ services:
       - "7878:7878"
     volumes:
       - ${CONFIG_DIR}/radarr:/config
-      - ${DOWNLOADS_DIR}:/downloads
-      - ${MEDIA_DIR}/movies:/movies
+      - arr-data:/data
     depends_on:
       - sabnzbd
       - prowlarr
@@ -49,8 +56,7 @@ services:
       - "8989:8989"
     volumes:
       - ${CONFIG_DIR}/sonarr:/config
-      - ${DOWNLOADS_DIR}:/downloads
-      - ${MEDIA_DIR}/tv:/tv
+      - arr-data:/data
     depends_on:
       - sabnzbd
       - prowlarr
@@ -64,8 +70,7 @@ services:
       - "8686:8686"
     volumes:
       - ${CONFIG_DIR}/lidarr:/config
-      - ${DOWNLOADS_DIR}:/downloads
-      - ${MEDIA_DIR}/music:/music
+      - arr-data:/data
     depends_on:
       - sabnzbd
       - prowlarr
@@ -79,8 +84,7 @@ services:
       - "6767:6767"
     volumes:
       - ${CONFIG_DIR}/bazarr:/config
-      - ${MEDIA_DIR}/movies:/movies
-      - ${MEDIA_DIR}/tv:/tv
+      - arr-data:/data
     depends_on:
       - radarr
       - sonarr
@@ -97,7 +101,7 @@ services:
       - "1900:1900/udp"
     volumes:
       - ${CONFIG_DIR}/jellyfin:/config
-      - ${MEDIA_DIR}:/media:ro
+      - arr-data:/data
     # Uncomment for Intel/AMD hardware transcoding on Linux hosts:
     # devices:
     #   - /dev/dri:/dev/dri
