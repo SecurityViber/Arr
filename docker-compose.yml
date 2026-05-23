@@ -55,6 +55,21 @@ services:
       - sabnzbd
       - prowlarr
 
+  lidarr:
+    image: lscr.io/linuxserver/lidarr:latest
+    container_name: lidarr
+    restart: unless-stopped
+    environment: *common-env
+    ports:
+      - "8686:8686"
+    volumes:
+      - ${CONFIG_DIR}/lidarr:/config
+      - ${DOWNLOADS_DIR}:/downloads
+      - ${MEDIA_DIR}/music:/music
+    depends_on:
+      - sabnzbd
+      - prowlarr
+
   bazarr:
     image: lscr.io/linuxserver/bazarr:latest
     container_name: bazarr
