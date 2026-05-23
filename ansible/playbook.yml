@@ -102,9 +102,14 @@
           -c "mkdir -p
           /data/downloads/incomplete
           /data/downloads/complete
+          /data/downloads/complete/movies
+          /data/downloads/complete/tv
+          /data/downloads/complete/music
+          /data/downloads/complete/xxx
           /data/media/movies
           /data/media/tv
-          /data/media/music"
+          /data/media/music
+          /data/media/xxx"
         chdir: "{{ deploy_dir }}"
       changed_when: false
 
@@ -117,6 +122,40 @@
         ('Started' in compose_up.stderr) or
         ('Created' in compose_up.stderr) or
         ('Recreated' in compose_up.stderr)
+
+    - name: Wait for SABnzbd to finish writing its initial config
+      ansible.builtin.wait_for:
+        path: "{{ deploy_dir }}/config/sabnzbd/sabnzbd.ini"
+        search_regex: '^api_key\s*=\s*[a-f0-9]{16,}'
+        timeout: 120
+
+    - name: Stop SABnzbd before editing config so it cannot overwrite our changes
+      ansible.builtin.command: docker compose stop sabnzbd
+      args:
+        chdir: "{{ deploy_dir }}"
+      changed_when: false
+
+    - name: Configure SABnzbd paths and remote access
+      community.general.ini_file:
+        path: "{{ deploy_dir }}/config/sabnzbd/sabnzbd.ini"
+        section: misc
+        option: "{{ item.option }}"
+        value: "{{ item.value }}"
+        no_extra_spaces: true
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+        mode: "0644"
+      loop:
+        - { option: download_dir, value: /data/downloads/incomplete }
+        - { option: complete_dir, value: /data/downloads/complete }
+        - { option: host, value: "0.0.0.0" }
+        - { option: host_whitelist, value: "sabnzbd,prowlarr,radarr,sonarr,lidarr,whisparr,bazarr,jellyseerr,{{ ansible_default_ipv4.address }}" }
+
+    - name: Start SABnzbd with new config
+      ansible.builtin.command: docker compose start sabnzbd
+      args:
+        chdir: "{{ deploy_dir }}"
+      changed_when: true
 
   handlers:
     - name: Restart stack
