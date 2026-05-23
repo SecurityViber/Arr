@@ -16,6 +16,8 @@
           - nfs-common
           - cifs-utils
           - smbclient
+          - mesa-va-drivers
+          - vainfo
         state: present
         update_cache: true
 
@@ -93,6 +95,26 @@
         owner: "{{ ansible_user }}"
         group: "{{ ansible_user }}"
         mode: "0600"
+      notify: Restart stack
+
+    - name: Detect host render group GID (for Jellyfin GPU access)
+      ansible.builtin.command: getent group render
+      register: render_group
+      changed_when: false
+
+    - name: Detect host video group GID (for Jellyfin GPU access)
+      ansible.builtin.command: getent group video
+      register: video_group
+      changed_when: false
+
+    - name: Write detected GPU GIDs into deployed .env
+      ansible.builtin.lineinfile:
+        path: "{{ deploy_dir }}/.env"
+        regexp: "^{{ item.key }}="
+        line: "{{ item.key }}={{ item.value }}"
+      loop:
+        - { key: RENDER_GID, value: "{{ render_group.stdout.split(':')[2] }}" }
+        - { key: VIDEO_GID, value: "{{ video_group.stdout.split(':')[2] }}" }
       notify: Restart stack
 
     - name: Bootstrap media + download directory structure on the NAS share

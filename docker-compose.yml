@@ -116,9 +116,11 @@ services:
     volumes:
       - ${CONFIG_DIR}/jellyfin:/config
       - arr-data:/data
-    # Uncomment for Intel/AMD hardware transcoding on Linux hosts:
-    # devices:
-    #   - /dev/dri:/dev/dri
+    devices:
+      - /dev/dri:/dev/dri
+    group_add:
+      - "${RENDER_GID:-989}"
+      - "${VIDEO_GID:-44}"
 
   jellyseerr:
     image: fallenbagel/jellyseerr:latest
