@@ -1,0 +1,103 @@
+x-common-env: &common-env
+  PUID: ${PUID}
+  PGID: ${PGID}
+  TZ: ${TZ}
+
+services:
+  sabnzbd:
+    image: lscr.io/linuxserver/sabnzbd:latest
+    container_name: sabnzbd
+    restart: unless-stopped
+    environment: *common-env
+    ports:
+      - "8080:8080"
+    volumes:
+      - ${CONFIG_DIR}/sabnzbd:/config
+      - ${DOWNLOADS_DIR}:/downloads
+
+  prowlarr:
+    image: lscr.io/linuxserver/prowlarr:latest
+    container_name: prowlarr
+    restart: unless-stopped
+    environment: *common-env
+    ports:
+      - "9696:9696"
+    volumes:
+      - ${CONFIG_DIR}/prowlarr:/config
+
+  radarr:
+    image: lscr.io/linuxserver/radarr:latest
+    container_name: radarr
+    restart: unless-stopped
+    environment: *common-env
+    ports:
+      - "7878:7878"
+    volumes:
+      - ${CONFIG_DIR}/radarr:/config
+      - ${DOWNLOADS_DIR}:/downloads
+      - ${MEDIA_DIR}/movies:/movies
+    depends_on:
+      - sabnzbd
+      - prowlarr
+
+  sonarr:
+    image: lscr.io/linuxserver/sonarr:latest
+    container_name: sonarr
+    restart: unless-stopped
+    environment: *common-env
+    ports:
+      - "8989:8989"
+    volumes:
+      - ${CONFIG_DIR}/sonarr:/config
+      - ${DOWNLOADS_DIR}:/downloads
+      - ${MEDIA_DIR}/tv:/tv
+    depends_on:
+      - sabnzbd
+      - prowlarr
+
+  bazarr:
+    image: lscr.io/linuxserver/bazarr:latest
+    container_name: bazarr
+    restart: unless-stopped
+    environment: *common-env
+    ports:
+      - "6767:6767"
+    volumes:
+      - ${CONFIG_DIR}/bazarr:/config
+      - ${MEDIA_DIR}/movies:/movies
+      - ${MEDIA_DIR}/tv:/tv
+    depends_on:
+      - radarr
+      - sonarr
+
+  jellyfin:
+    image: lscr.io/linuxserver/jellyfin:latest
+    container_name: jellyfin
+    restart: unless-stopped
+    environment: *common-env
+    ports:
+      - "8096:8096"
+      - "8920:8920"
+      - "7359:7359/udp"
+      - "1900:1900/udp"
+    volumes:
+      - ${CONFIG_DIR}/jellyfin:/config
+      - ${MEDIA_DIR}:/media:ro
+    # Uncomment for Intel/AMD hardware transcoding on Linux hosts:
+    # devices:
+    #   - /dev/dri:/dev/dri
+
+  jellyseerr:
+    image: fallenbagel/jellyseerr:latest
+    container_name: jellyseerr
+    restart: unless-stopped
+    environment:
+      TZ: ${TZ}
+    ports:
+      - "5055:5055"
+    volumes:
+      - ${CONFIG_DIR}/jellyseerr:/app/config
+    depends_on:
+      - jellyfin
+      - radarr
+      - sonarr
