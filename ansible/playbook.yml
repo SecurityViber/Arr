@@ -171,7 +171,7 @@
         - { option: download_dir, value: /data/downloads/incomplete }
         - { option: complete_dir, value: /data/downloads/complete }
         - { option: host, value: "0.0.0.0" }
-        - { option: host_whitelist, value: "sabnzbd,prowlarr,radarr,sonarr,lidarr,whisparr,bazarr,jellyseerr,{{ ansible_default_ipv4.address }}" }
+        - { option: host_whitelist, value: "sabnzbd,prowlarr,radarr,sonarr,lidarr,bazarr,jellyseerr,{{ ansible_default_ipv4.address }}" }
 
     - name: Start SABnzbd with new config
       ansible.builtin.command: docker compose start sabnzbd

@@ -75,20 +75,6 @@ services:
       - sabnzbd
       - prowlarr
 
-  whisparr:
-    image: ghcr.io/hotio/whisparr:nightly
-    container_name: whisparr
-    restart: unless-stopped
-    environment: *common-env
-    ports:
-      - "6969:6969"
-    volumes:
-      - ${CONFIG_DIR}/whisparr:/config
-      - arr-data:/data
-    depends_on:
-      - sabnzbd
-      - prowlarr
-
   bazarr:
     image: lscr.io/linuxserver/bazarr:latest
     container_name: bazarr
